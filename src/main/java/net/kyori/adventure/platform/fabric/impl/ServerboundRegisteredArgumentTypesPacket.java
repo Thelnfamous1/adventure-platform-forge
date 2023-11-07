@@ -23,15 +23,16 @@
  */
 package net.kyori.adventure.platform.fabric.impl;
 
-import io.netty.buffer.Unpooled;
-import java.util.HashSet;
-import java.util.Set;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.kyori.adventure.Adventure;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.NetworkEvent;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * A packet sent client to server, to let the server know which optional argument types are available on the server.
@@ -44,12 +45,22 @@ public record ServerboundRegisteredArgumentTypesPacket(Set<ResourceLocation> kno
   public static final ResourceLocation ID = new ResourceLocation(Adventure.NAMESPACE, "registered_args");
 
   public static void register() {
+    /*
     ServerPlayNetworking.registerGlobalReceiver(ID, (server, player, handler, buffer, responder) -> {
       final ServerboundRegisteredArgumentTypesPacket pkt = ServerboundRegisteredArgumentTypesPacket.of(buffer);
       server.execute(() -> { // on main thread
         ServerArgumentTypes.knownArgumentTypes(player, pkt.known, responder);
       });
     });
+     */
+  }
+
+  public void handle(Supplier<NetworkEvent.Context> ctx){
+    ctx.get().enqueueWork(() -> {
+      ServerPlayer player = ctx.get().getSender();
+      ServerArgumentTypes.knownArgumentTypes(player, this.known);
+    });
+    ctx.get().setPacketHandled(true);
   }
 
   public static ServerboundRegisteredArgumentTypesPacket of(final Set<ResourceLocation> idents) {
@@ -65,21 +76,11 @@ public record ServerboundRegisteredArgumentTypesPacket(Set<ResourceLocation> kno
     return of(items);
   }
 
-  private void toPacket(final FriendlyByteBuf buffer) {
+  public void toPacket(final FriendlyByteBuf buffer) {
     buffer.writeVarInt(this.known.size());
     for (final ResourceLocation id : this.known) {
       buffer.writeResourceLocation(id);
     }
   }
 
-  /**
-   * Send the client's list of identifiers to the server.
-   *
-   * @param sender the sender to send the packet to
-   */
-  public void sendTo(final PacketSender sender) {
-    final FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer(this.known.size() * 8));
-    this.toPacket(buffer);
-    sender.sendPacket(ID, buffer);
-  }
 }

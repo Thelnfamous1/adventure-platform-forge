@@ -23,16 +23,22 @@
  */
 package net.kyori.adventure.platform.fabric.impl;
 
-import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.kyori.adventure.Adventure;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkEvent;
+
+import java.util.function.Supplier;
 
 public record ClientboundArgumentTypeMappingsPacket(Int2ObjectMap<ResourceLocation> mappings) {
   public static final ResourceLocation ID = new ResourceLocation(Adventure.NAMESPACE, "registered_arg_mappings");
+
+  public void handle(Supplier<NetworkEvent.Context> ctx){
+    ctx.get().enqueueWork(() -> ServerArgumentTypes.receiveMappings(this));
+    ctx.get().setPacketHandled(true);
+  }
 
   public static ClientboundArgumentTypeMappingsPacket from(final FriendlyByteBuf buffer) {
     final Int2ObjectMap<ResourceLocation> map = buffer.readMap(
@@ -43,17 +49,12 @@ public record ClientboundArgumentTypeMappingsPacket(Int2ObjectMap<ResourceLocati
     return new ClientboundArgumentTypeMappingsPacket(map);
   }
 
-  private FriendlyByteBuf serialize() {
-    final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+  public void toPacket(FriendlyByteBuf buf) {
     buf.writeMap(
       this.mappings,
       FriendlyByteBuf::writeVarInt,
       FriendlyByteBuf::writeResourceLocation
     );
-    return buf;
   }
 
-  public void sendTo(final PacketSender responder) {
-    responder.sendPacket(ID, this.serialize());
-  }
 }

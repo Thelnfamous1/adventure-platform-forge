@@ -28,20 +28,18 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import me.Thelnfamous1.adventure_platform_forge.network.AdventureNetwork;
 import net.kyori.adventure.platform.fabric.impl.server.ServerPlayerBridge;
 import net.minecraft.Util;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Objects.requireNonNull;
 
@@ -95,9 +93,9 @@ public final class ServerArgumentTypes {
     return IDS_BY_TYPE_INFO.getInt(argumentTypeInfo);
   }
 
-  public static void knownArgumentTypes(final ServerPlayer player, final Set<ResourceLocation> ids, final PacketSender responder) {
+  public static void knownArgumentTypes(final ServerPlayer player, final Set<ResourceLocation> ids) {
     ((ServerPlayerBridge) player).bridge$knownArguments(ids);
-    sendMappings(player, responder);
+    sendMappings(player);
     if (!ids.isEmpty()) { // TODO: Avoid resending the whole command tree, find a way to receive the packet before sending?
       player.server.getCommands().sendCommands(player);
     }
@@ -107,7 +105,7 @@ public final class ServerArgumentTypes {
     return ((ServerPlayerBridge) player).bridge$knownArguments();
   }
 
-  private static void sendMappings(final ServerPlayer player, final PacketSender responder) {
+  private static void sendMappings(final ServerPlayer player) {
     final Set<ResourceLocation> known = knownArgumentTypes(player);
     final Int2ObjectMap<ResourceLocation> map = new Int2ObjectArrayMap<>();
     for (final ResourceLocation resourceLocation : known) {
@@ -116,7 +114,8 @@ public final class ServerArgumentTypes {
         map.put(id(type.argumentTypeInfo()), type.id());
       }
     }
-    new ClientboundArgumentTypeMappingsPacket(map).sendTo(responder);
+    AdventureNetwork.SYNC_CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new ClientboundArgumentTypeMappingsPacket(map));
+    //new ClientboundArgumentTypeMappingsPacket(map).sendTo(responder);
   }
 
   public static void receiveMappings(final ClientboundArgumentTypeMappingsPacket packet) {

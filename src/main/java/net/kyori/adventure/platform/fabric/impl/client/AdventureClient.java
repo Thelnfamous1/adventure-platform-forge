@@ -23,29 +23,30 @@
  */
 package net.kyori.adventure.platform.fabric.impl.client;
 
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.networking.v1.C2SPlayChannelEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.loader.api.FabricLoader;
-import net.kyori.adventure.platform.fabric.impl.AdventureCommon;
-import net.kyori.adventure.platform.fabric.impl.ClientboundArgumentTypeMappingsPacket;
+import me.Thelnfamous1.adventure_platform_forge.network.AdventureNetwork;
 import net.kyori.adventure.platform.fabric.impl.ServerArgumentTypes;
 import net.kyori.adventure.platform.fabric.impl.ServerboundRegisteredArgumentTypesPacket;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.common.MinecraftForge;
 
-public final class AdventureClient implements ClientModInitializer {
-  @Override
+public final class AdventureClient /*implements ClientModInitializer*/ {
+
+  //@Override
   public void onInitializeClient() {
     this.setupCustomArgumentTypes();
   }
 
   private void setupCustomArgumentTypes() {
+    MinecraftForge.EVENT_BUS.addListener(this::clientLogInToServer);
+    /*
     // sync is optional, so fapi is not required
     if (FabricLoader.getInstance().isModLoaded(AdventureCommon.MOD_FAPI_NETWORKING)) {
       C2SPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
         if (channels.contains(ServerboundRegisteredArgumentTypesPacket.ID)) {
           client.execute(() -> {
             if (ClientPlayNetworking.canSend(ServerboundRegisteredArgumentTypesPacket.ID)) {
-              ServerboundRegisteredArgumentTypesPacket.of(ServerArgumentTypes.ids()).sendTo(sender);
+              AdventureNetwork.SYNC_CHANNEL.sendToServer(ServerboundRegisteredArgumentTypesPacket.of(ServerArgumentTypes.ids()));
+              //ServerboundRegisteredArgumentTypesPacket.of(ServerArgumentTypes.ids()).sendTo(sender);
             }
           });
         }
@@ -55,5 +56,11 @@ public final class AdventureClient implements ClientModInitializer {
         client.execute(() -> ServerArgumentTypes.receiveMappings(pkt));
       });
     }
+    */
+  }
+  private void clientLogInToServer(ClientPlayerNetworkEvent.LoggingIn event)
+  {
+    if (event.getConnection() == null || !event.getConnection().isMemoryConnection())
+      AdventureNetwork.SYNC_CHANNEL.sendToServer(ServerboundRegisteredArgumentTypesPacket.of(ServerArgumentTypes.ids()));
   }
 }

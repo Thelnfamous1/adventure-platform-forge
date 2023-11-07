@@ -26,9 +26,6 @@ package net.kyori.adventure.platform.fabric.impl;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.logging.LogUtils;
 import me.Thelnfamous1.adventure_platform_forge.event.PlayerLocalesChangedEvent;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.kyori.adventure.Adventure;
 import net.kyori.adventure.chat.ChatType;
@@ -51,7 +48,10 @@ import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.core.Registry;
 import net.minecraft.locale.Language;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -66,7 +66,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class AdventureCommon implements ModInitializer {
+public class AdventureCommon /*implements ModInitializer*/ {
 
   private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -83,14 +83,14 @@ public class AdventureCommon implements ModInitializer {
   }
 
   private static SidedProxy chooseSidedProxy() {
-    final EnvType environment = FabricLoader.getInstance().getEnvironmentType();
+    final Dist environment = FMLEnvironment.dist;
     final var sidedProxyContainers = FabricLoader.getInstance().getEntrypointContainers(
       "adventure-internal:sidedproxy/" + environment.name().toLowerCase(Locale.ROOT),
       SidedProxy.class
     );
 
     return switch (sidedProxyContainers.size()) {
-      case 0 -> throw new IllegalStateException("No sided proxies were available for adventure-platform-fabric in environment " + environment);
+      case 0 -> throw new IllegalStateException("No sided proxies were available for adventure-platform-forge in environment " + environment);
       case 1 -> {
         final var proxy = sidedProxyContainers.get(0);
         LOGGER.debug("Selected sided proxy {} from {}", proxy.getEntrypoint(), proxy.getProvider().getMetadata().getId());
@@ -160,7 +160,7 @@ public class AdventureCommon implements ModInitializer {
     return new ResourceLocation(Adventure.NAMESPACE, value);
   }
 
-  @Override
+  //@Override
   public void onInitialize() {
     this.setupCustomArgumentTypes();
 
@@ -168,20 +168,22 @@ public class AdventureCommon implements ModInitializer {
 
     // If we are in development mode, shut down immediately
     if (Boolean.getBoolean("adventure.testMode")) {
-      if (FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) {
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-          MixinEnvironment.getCurrentEnvironment().audit();
-          server.execute(() -> {
-            try {
-              Files.writeString(Path.of("adventure-test-success.out"), "true");
-            } catch (final IOException ex) {
-              System.exit(1);
-            }
-            server.halt(false);
-          });
-        });
+      if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+        MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
       }
     }
+  }
+
+  private void onServerStarted(ServerStartedEvent event){
+    MixinEnvironment.getCurrentEnvironment().audit();
+    event.getServer().execute(() -> {
+      try {
+        Files.writeString(Path.of("adventure-test-success.out"), "true");
+      } catch (final IOException ex) {
+        System.exit(1);
+      }
+      event.getServer().halt(false);
+    });
   }
 
   private void handlePlayerLocalesChanged(PlayerLocalesChangedEvent event){
@@ -192,9 +194,11 @@ public class AdventureCommon implements ModInitializer {
 
   private void setupCustomArgumentTypes() {
     // sync is optional, so fapi is not required
+    /*
     if (FabricLoader.getInstance().isModLoaded(MOD_FAPI_NETWORKING)) {
       ServerboundRegisteredArgumentTypesPacket.register();
     }
+     */
 
     ServerArgumentTypes.register(
       new ServerArgumentType<>(
