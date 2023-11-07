@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "net.kyori.adventure.platform.fabric.impl.client.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "${mod_id}.refmap.json",
+  "client": [
+    "AbstractSoundInstanceAccess",
+    "BossHealthOverlayMixin",
+    "LocalPlayerMixin",
+    "OptionsMixin"
+  ],
+  "minVersion": "0.8.5"
+}

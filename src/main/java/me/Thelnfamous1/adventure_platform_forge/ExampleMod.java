@@ -1,4 +1,4 @@
-package me.sizableshrimp.examplemod;
+package me.Thelnfamous1.adventure_platform_forge;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.eventbus.api.SubscribeEvent;

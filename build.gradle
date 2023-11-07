@@ -4,6 +4,7 @@ plugins {
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 version = "${minecraft_version}-${mod_version}"
@@ -170,6 +171,19 @@ repositories {
     // flatDir {
     //     dir 'libs'
     // }
+    mavenCentral()
+}
+
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+
+    // Sets up the mixin config; this gets added to run configurations and the manifest in the final jar
+    config "${mod_id}.accessor.mixins.json"
+    config "${mod_id}.mixins.json"
+    config "${mod_id}.client.mixins.json"
+
+    // Enables exporting mixin-changed classes to .mixin.out in the run folder
+    debug.export = true
 }
 
 dependencies {
@@ -179,6 +193,9 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // Mixin annotation processor - generates the refmap
+    annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
 
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
@@ -190,6 +207,86 @@ dependencies {
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"
     // implementation fg.deobf("blank:coolmod-${mc_version}:${coolmod_version}")
+
+    annotationProcessor("com.google.auto.service:auto-service:1.0.1")
+    annotationProcessor("ca.stellardrift:contract-validator:1.0.1")
+    compileOnly("com.google.auto.service:auto-service-annotations:1.0.1")
+
+    /*
+    annotationProcessor(libs.autoService)
+    annotationProcessor(libs.contractValidator)
+    compileOnlyApi(libs.autoService.annotations)
+    sequenceOf(
+            libs.adventure.key,
+            libs.adventure.api,
+            libs.adventure.textLoggerSlf4j,
+            libs.adventure.textMinimessage,
+            libs.adventure.textSerializerPlain
+    ).forEach {
+        modApi(it) {
+            exclude("org.slf4j", "slf4j-api")
+        }
+        include(it)
+    }
+
+    sequenceOf(
+            libs.adventure.platform.api,
+            libs.adventure.textSerializerGson
+    ).forEach {
+        modApi(it) {
+            exclude("com.google.code.gson")
+        }
+        include(it)
+    }
+    modApi(fabricApi.module("fabric-api-base", libs.versions.fabricApi.get()))
+
+    // Transitive deps
+    include(libs.examination.api)
+    include(libs.examination.string)
+    modCompileOnly(libs.jetbrainsAnnotations)
+
+    minecraft(libs.minecraft)
+    mappings(loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${libs.versions.parchment.get()}@zip")
+    })
+    modImplementation(libs.fabric.loader)
+     */
+
+    implementation fg.deobf("net.kyori:adventure-key:4.14.0"){
+        exclude module: 'org.slf4j'
+        exclude module: 'slf4j-api'
+    }
+    implementation fg.deobf("net.kyori:adventure-api:4.14.0"){
+        exclude module: 'org.slf4j'
+        exclude module: 'slf4j-api'
+    }
+    implementation fg.deobf("net.kyori:adventure-text-logger-slf4j:4.14.0"){
+        exclude module: 'org.slf4j'
+        exclude module: 'slf4j-api'
+    }
+    implementation fg.deobf("net.kyori:adventure-text-minimessage:4.14.0"){
+        exclude module: 'org.slf4j'
+        exclude module: 'slf4j-api'
+    }
+    implementation fg.deobf("net.kyori:adventure-text-serializer-plain:4.14.0"){
+        exclude module: 'org.slf4j'
+        exclude module: 'slf4j-api'
+    }
+
+    implementation fg.deobf("net.kyori:adventure-platform-api:4.3.0"){
+        exclude module: "com.google.code.gson"
+    }
+    implementation fg.deobf("net.kyori:adventure-text-serializer-gson:4.14.0"){
+        exclude module: "com.google.code.gson"
+    }
+    // needed as dependency for gson dependency
+    implementation fg.deobf("net.kyori:adventure-text-serializer-json:4.14.0"){
+        exclude module: "com.google.code.gson"
+    }
+
+    implementation fg.deobf("net.kyori:examination-api:1.3.0")
+    implementation fg.deobf("net.kyori:examination-string:1.3.0")
 
     // For more info:
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
