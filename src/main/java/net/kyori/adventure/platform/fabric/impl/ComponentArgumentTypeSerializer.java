@@ -24,6 +24,7 @@
 package net.kyori.adventure.platform.fabric.impl;
 
 import com.google.gson.JsonObject;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.platform.fabric.ComponentArgumentType;
 import net.kyori.adventure.platform.fabric.FabricAudiences;
 import net.minecraft.commands.CommandBuildContext;
@@ -46,7 +47,7 @@ public final class ComponentArgumentTypeSerializer implements ArgumentTypeInfo<C
   @Override
   public Template deserializeFromNetwork(final FriendlyByteBuf buffer) {
     final ResourceLocation id = buffer.readResourceLocation();
-    final ComponentArgumentType.Format format = ComponentArgumentType.Format.INDEX.value(id);
+    final ComponentArgumentType.Format format = ComponentArgumentType.Format.INDEX.value((Key)(Object)id);
     if (format == null) {
       throw new IllegalArgumentException("Unknown Adventure component format: " + id);
     }

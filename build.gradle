@@ -181,6 +181,7 @@ mixin {
     config "${mod_id}.accessor.mixins.json"
     config "${mod_id}.mixins.json"
     config "${mod_id}.client.mixins.json"
+    config "${mod_id}.test.mixins.json"
 
     // Enables exporting mixin-changed classes to .mixin.out in the run folder
     debug.export = true

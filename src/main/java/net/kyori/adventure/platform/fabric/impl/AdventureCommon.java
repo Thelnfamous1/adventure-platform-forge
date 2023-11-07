@@ -25,14 +25,16 @@ package net.kyori.adventure.platform.fabric.impl;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.logging.LogUtils;
+import me.Thelnfamous1.adventure_platform_forge.AdventurePlatformForge;
 import me.Thelnfamous1.adventure_platform_forge.event.PlayerLocalesChangedEvent;
-import net.fabricmc.loader.api.FabricLoader;
 import net.kyori.adventure.Adventure;
 import net.kyori.adventure.chat.ChatType;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.platform.fabric.ComponentArgumentType;
 import net.kyori.adventure.platform.fabric.FabricAudiences;
 import net.kyori.adventure.platform.fabric.KeyArgumentType;
+import net.kyori.adventure.platform.fabric.impl.client.ClientProxy;
+import net.kyori.adventure.platform.fabric.impl.server.DedicatedServerProxy;
 import net.kyori.adventure.platform.fabric.impl.server.FabricServerAudiencesImpl;
 import net.kyori.adventure.pointer.Pointered;
 import net.kyori.adventure.pointer.Pointers;
@@ -84,6 +86,12 @@ public class AdventureCommon /*implements ModInitializer*/ {
 
   private static SidedProxy chooseSidedProxy() {
     final Dist environment = FMLEnvironment.dist;
+    if(environment.isClient()){
+      return new ClientProxy();
+    } else{
+      return new DedicatedServerProxy();
+    }
+    /*
     final var sidedProxyContainers = FabricLoader.getInstance().getEntrypointContainers(
       "adventure-internal:sidedproxy/" + environment.name().toLowerCase(Locale.ROOT),
       SidedProxy.class
@@ -102,6 +110,8 @@ public class AdventureCommon /*implements ModInitializer*/ {
         yield proxy.getEntrypoint();
       }
     };
+
+     */
   }
 
   private static ComponentFlattener createFlattener(final SidedProxy proxy) {
@@ -162,6 +172,7 @@ public class AdventureCommon /*implements ModInitializer*/ {
 
   //@Override
   public void onInitialize() {
+    AdventurePlatformForge.LOGGER.info("Initializing AdventureCommon!");
     this.setupCustomArgumentTypes();
 
     MinecraftForge.EVENT_BUS.addListener(this::handlePlayerLocalesChanged);

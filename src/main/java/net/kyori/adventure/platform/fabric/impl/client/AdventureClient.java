@@ -23,6 +23,7 @@
  */
 package net.kyori.adventure.platform.fabric.impl.client;
 
+import me.Thelnfamous1.adventure_platform_forge.AdventurePlatformForge;
 import me.Thelnfamous1.adventure_platform_forge.network.AdventureNetwork;
 import net.kyori.adventure.platform.fabric.impl.ServerArgumentTypes;
 import net.kyori.adventure.platform.fabric.impl.ServerboundRegisteredArgumentTypesPacket;
@@ -33,6 +34,7 @@ public final class AdventureClient /*implements ClientModInitializer*/ {
 
   //@Override
   public void onInitializeClient() {
+    AdventurePlatformForge.LOGGER.info("Initializing AdventureClient!");
     this.setupCustomArgumentTypes();
   }
 

@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import me.Thelnfamous1.adventure_platform_forge.network.AdventureNetwork;
 import net.kyori.adventure.platform.fabric.impl.AdventureCommon;
 import net.kyori.adventure.platform.fabric.impl.client.AdventureClient;
+import net.kyori.adventure.platform.test.fabric.AdventureTester;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -17,10 +18,12 @@ public class AdventurePlatformForge {
     public static final Logger LOGGER = LogUtils.getLogger();
     private final AdventureCommon adventureCommon;
     private final AdventureClient adventureClient;
+    private final AdventureTester adventureTester;
 
     public AdventurePlatformForge() {
         this.adventureCommon = new AdventureCommon();
         this.adventureClient = new AdventureClient();
+        this.adventureTester = new AdventureTester();
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         modEventBus.addListener(this::onCommonSetup);
         modEventBus.addListener(this::onClientSetup);
@@ -29,6 +32,7 @@ public class AdventurePlatformForge {
     private void onCommonSetup(FMLCommonSetupEvent event){
         event.enqueueWork(() -> {
                 this.adventureCommon.onInitialize();
+                this.adventureTester.onInitialize();
                 AdventureNetwork.init();
         });
     }

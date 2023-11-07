@@ -25,33 +25,7 @@ package net.kyori.adventure.platform.test.fabric;
 
 import com.google.common.base.Strings;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.stream.IntStream;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.loader.api.FabricLoader;
+import me.Thelnfamous1.adventure_platform_forge.AdventurePlatformForge;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.chat.ChatType;
@@ -61,8 +35,11 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.platform.fabric.AdventureCommandSourceStack;
 import net.kyori.adventure.platform.fabric.FabricClientAudiences;
 import net.kyori.adventure.platform.fabric.FabricServerAudiences;
+import net.kyori.adventure.platform.fabric.impl.AdventureCommandSourceStackInternal;
+import net.kyori.adventure.pointer.Pointered;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
@@ -77,10 +54,30 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
@@ -89,9 +86,7 @@ import static net.kyori.adventure.platform.fabric.ComponentArgumentType.componen
 import static net.kyori.adventure.platform.fabric.ComponentArgumentType.miniMessage;
 import static net.kyori.adventure.platform.fabric.KeyArgumentType.key;
 import static net.kyori.adventure.sound.Sound.sound;
-import static net.kyori.adventure.text.Component.newline;
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.Component.translatable;
+import static net.kyori.adventure.text.Component.*;
 import static net.kyori.adventure.text.event.ClickEvent.openFile;
 import static net.kyori.adventure.text.format.TextColor.color;
 import static net.minecraft.commands.Commands.argument;
@@ -99,10 +94,10 @@ import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.arguments.EntityArgument.getPlayers;
 import static net.minecraft.commands.arguments.EntityArgument.players;
 
-public class AdventureTester implements ModInitializer {
+public class AdventureTester /*implements ModInitializer*/ {
   public static final ComponentLogger LOGGER = ComponentLogger.logger();
-  private static final Key FONT_MEOW = advKey("meow");
-  private static final Key FONT_IOSEVKA = advKey("iosevka");
+  private static final Key FONT_MEOW = (Key)(Object)advKey("meow");
+  private static final Key FONT_IOSEVKA = (Key)(Object)advKey("iosevka");
 
   private static final List<TextColor> LINE_COLOURS = IntStream.of(0x9400D3, 0x4B0082, 0x0000FF, 0x00FF00, 0xFFFF00, 0xFF7F00, 0xFF0000,
     0x55CDFC, 0xF7A8B8, 0xFFFFFF, 0xF7A8B8, 0x55CDFC)
@@ -119,7 +114,7 @@ public class AdventureTester implements ModInitializer {
   private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
   private @Nullable FabricServerAudiences platform;
 
-  private static final ChatType ADVENTURE_BROADCAST = net.kyori.adventure.chat.ChatType.chatType(advKey("broadcast"));
+  private static final ChatType ADVENTURE_BROADCAST = net.kyori.adventure.chat.ChatType.chatType((Key)(Object)advKey("broadcast"));
 
   private static ResourceLocation advKey(final String location) {
     return new ResourceLocation("adventure", location);
@@ -129,14 +124,11 @@ public class AdventureTester implements ModInitializer {
     return requireNonNull(this.platform, "Tried to access Fabric platform without a running server");
   }
 
-  public void serverStarted(final MinecraftServer server) {
-    this.platform = FabricServerAudiences.of(server);
-  }
-
-  @Override
+  //@Override
   public void onInitialize() {
+    AdventurePlatformForge.LOGGER.info("Initializing AdventureTester!");
     // Register localizations
-    final TranslationRegistry testmodRegistry = TranslationRegistry.create(advKey("testmod_localizations"));
+    final TranslationRegistry testmodRegistry = TranslationRegistry.create((Key)(Object)advKey("testmod_localizations"));
     for (final var lang : List.of(Locale.ENGLISH, Locale.GERMAN)) {
       testmodRegistry.registerAll(lang, ResourceBundle.getBundle("net.kyori.adventure.platform.test.fabric.messages", lang), false);
     }
@@ -144,7 +136,13 @@ public class AdventureTester implements ModInitializer {
 
     LOGGER.info(Component.text("Setting up mod! {} is a cool mode"), Component.translatable("gameMode.adventure", NamedTextColor.BLUE));
 
+
+    MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+    MinecraftForge.EVENT_BUS.addListener(this::onServerStopped);
+    MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+
     // Set up platform
+    /*
     ServerLifecycleEvents.SERVER_STARTING.register(server -> this.platform = FabricServerAudiences.of(server));
     ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
       this.platform = null;
@@ -186,9 +184,10 @@ public class AdventureTester implements ModInitializer {
           final Collection<ServerPlayer> targets = getPlayers(ctx, ARG_TARGETS);
           final AdventureCommandSourceStack source = this.adventure().audience(ctx.getSource());
           final Component message = component(ctx, ARG_TEXT);
-          final Audience destination = Audience.audience(targets);
+          //noinspection unchecked
+          final Audience destination = Audience.audience((Collection<Audience>)(Collection<?>) targets);
 
-          destination.sendMessage(message, ADVENTURE_BROADCAST.bind(ctx.getSource().getDisplayName()));
+          destination.sendMessage(message, ADVENTURE_BROADCAST.bind((ComponentLike) ctx.getSource().getDisplayName()));
           source.sendMessage(text(b -> {
             b.content("You have sent \"");
             b.append(message).append(text("\" to ")).append(this.listPlayers(targets));
@@ -248,13 +247,151 @@ public class AdventureTester implements ModInitializer {
         }))));
     });
 
-    if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+     */
+
+    if (FMLEnvironment.dist == Dist.CLIENT) {
       this.onClient();
     }
   }
 
+  private void onServerStarting(ServerStartingEvent event){
+    this.platform = FabricServerAudiences.of(event.getServer());
+  }
+
+  private void onServerStopped(ServerStoppedEvent event){
+    this.platform = null;
+    this.greetingBars.clear();
+  }
+
+  private void registerCommands(RegisterCommandsEvent event){
+    event.getDispatcher().register(literal("adventure")
+            .then(literal("about").executes(ctx -> {
+              // Interface injection, this lets us access the default platform instance
+              ((AdventureCommandSourceStackInternal)ctx.getSource()).sendMessage(translatable("adventure.test.welcome", COLOR_RESPONSE, (ComponentLike) ctx.getSource().getDisplayName()));
+              // Or the old-fashioned way, for
+              this.adventure().audience(ctx.getSource()).sendMessage(translatable("adventure.test.description", color(0xc022cc)));
+              return 1;
+            }))
+            .then(literal("echo").then(argument(ARG_TEXT, miniMessage()).executes(ctx -> {
+              final Component result = component(ctx, ARG_TEXT);
+              ((AdventureCommandSourceStackInternal)ctx.getSource()).sendMessage(result, ChatType.SAY_COMMAND.bind((ComponentLike) ctx.getSource().getDisplayName()));
+              ((AdventureCommandSourceStackInternal)ctx.getSource()).sendMessage(text("And a second time!", NamedTextColor.DARK_PURPLE));
+              return 1;
+            })))
+            .then(literal("eval").then(argument(ARG_TEXT, miniMessage()).executes(ctx -> {
+              final Component result = component(ctx, ARG_TEXT);
+              ((AdventureCommandSourceStackInternal)ctx.getSource()).sendMessage((Component) ComponentUtils.updateForEntity(ctx.getSource(), this.platform.toNative(result), ctx.getSource().getEntity(), 0));
+              return Command.SINGLE_SUCCESS;
+            })))
+            .then(literal("countdown").then(argument(ARG_SECONDS, integer()).executes(ctx -> { // multiple boss bars!
+              final Audience audience = this.adventure().audience(ctx.getSource());
+              this.beginCountdown(text("Countdown"), getInteger(ctx, ARG_SECONDS), audience, BossBar.Color.RED, complete -> {
+                complete.sendActionBar(text("Countdown complete!", COLOR_RESPONSE));
+              });
+              this.beginCountdown(text("Faster Countdown"), getInteger(ctx, ARG_SECONDS) / 2, audience, BossBar.Color.PURPLE, complete -> {
+                complete.sendActionBar(text().content("Faster Countdown complete! ").color(COLOR_RESPONSE)
+                        .append(text('\uE042', Style.style().font(FONT_MEOW).build()))); // private use kitten in font
+              });
+              return 1;
+            })))
+            .then(literal("tellall").then(argument(ARG_TARGETS, players()).then(argument(ARG_TEXT, miniMessage()).executes(ctx -> {
+              final Collection<ServerPlayer> targets = getPlayers(ctx, ARG_TARGETS);
+              final AdventureCommandSourceStack source = this.adventure().audience(ctx.getSource());
+              final Component message = component(ctx, ARG_TEXT);
+              //noinspection unchecked
+              final Audience destination = Audience.audience((Collection<Audience>)(Collection<?>) targets);
+
+              destination.sendMessage(message, ADVENTURE_BROADCAST.bind((ComponentLike) ctx.getSource().getDisplayName()));
+              source.sendMessage(text(b -> {
+                b.content("You have sent \"");
+                b.append(message).append(text("\" to ")).append(this.listPlayers(targets));
+                b.color(COLOR_RESPONSE);
+              }));
+              return 1;
+            }))))
+            .then(literal("sound").then(argument(ARG_SOUND, key()).suggests(SuggestionProviders.AVAILABLE_SOUNDS).executes(ctx -> {
+              final Audience viewer = this.adventure().audience(ctx.getSource());
+              final Key sound = key(ctx, ARG_SOUND);
+              viewer.sendMessage(text(b -> b.content("Playing sound ").append(represent(sound)).color(COLOR_RESPONSE)));
+              viewer.playSound(sound(sound, Sound.Source.MASTER, 1f, 1f));
+              return 1;
+            })))
+            .then(literal("book").executes(ctx -> {
+              ((AdventureCommandSourceStackInternal)ctx.getSource()).openBook(Book.builder()
+                      .title(text("My book", NamedTextColor.RED))
+                      .author(text("The adventure team", COLOR_RESPONSE))
+                      .addPage(text("Welcome to our rules page"))
+                      .addPage(text("Let's do a thing!"))
+                      .build());
+              return 1;
+            }))
+            .then(literal("rgb").executes(ctx -> {
+              for (final TextColor color : LINE_COLOURS) {
+                ((AdventureCommandSourceStackInternal)ctx.getSource()).sendMessage(LINE.color(color));
+              }
+              return Command.SINGLE_SUCCESS;
+            }))
+            .then(literal("baron").executes(ctx -> {
+              final ServerPlayer player = ctx.getSource().getPlayerOrException();
+              final BossBar greeting = this.greetingBars.computeIfAbsent(player.getUUID(), id -> {
+                return BossBar.bossBar(translatable("adventure.test.greeting", NamedTextColor.GOLD, (ComponentLike) player.getDisplayName()),
+                        1, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+              });
+
+              this.adventure().audience(ctx.getSource()).showBossBar(greeting);
+              return Command.SINGLE_SUCCESS;
+            }))
+            .then(literal("baroff").executes(ctx -> {
+              final BossBar existing = this.greetingBars.remove(ctx.getSource().getPlayerOrException().getUUID());
+              if (existing != null) {
+                this.adventure().audience(ctx.getSource()).hideBossBar(existing);
+              }
+              return Command.SINGLE_SUCCESS;
+            }))
+            .then(literal("tablist").executes(ctx -> {
+              final Audience target = this.adventure().audience(ctx.getSource());
+              target.sendPlayerListHeader(Component.text("Adventure", COLOR_NAMESPACE));
+              target.sendPlayerListFooter(Component.text("test platform!", COLOR_PATH));
+              return Command.SINGLE_SUCCESS;
+            }))
+            .then(literal("plain").then(argument(ARG_TEXT, miniMessage()).executes(ctx -> {
+              final Component text = component(ctx, ARG_TEXT);
+              ctx.getSource().sendSuccess(net.minecraft.network.chat.Component.literal(PlainTextComponentSerializer.plainText().serialize(text)), false);
+              return Command.SINGLE_SUCCESS;
+            }))));
+  }
+
   private void onClient() {
+    MinecraftForge.EVENT_BUS.addListener(this::registerClientCommands);
+  }
+
+  private void registerClientCommands(RegisterClientCommandsEvent event){
     final GuiMessageTag kyoriMessage = new GuiMessageTag(0x987bd8, null, net.minecraft.network.chat.Component.literal("Adventure Message"), "Adventure");
+    event.getDispatcher().register(literal("adventure_client")
+            .then(literal("open_file").executes(ctx -> {
+              //final Path path = FabricLoader.getInstance().getGameDir().resolve("adventure_test_file.txt").toAbsolutePath();
+              final Path path = FMLPaths.GAMEDIR.get().resolve("adventure_test_file.txt").toAbsolutePath();
+              try {
+                Files.writeString(path, "Hello there " + Minecraft.getInstance().getUser().getName() + "!", StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+              } catch (final IOException ex) {
+                throw new RuntimeException("Uh oh! Couldn't write file!", ex);
+              }
+              final Component message = text()
+                      .content("Click to open ")
+                      .append(text(path.getFileName().toString(), color(0xFFA2C4)))
+                      .append(text('!'))
+                      .clickEvent(openFile(path.toString()))
+                      .build();
+
+
+              Minecraft.getInstance().gui.getChat().addMessage(FabricClientAudiences.of().toNative(message), null, kyoriMessage);
+              //ctx.getSource().getClient().gui.getChat().addMessage(FabricClientAudiences.of().toNative(message), null, kyoriMessage);
+              // ctx.getSource().getPlayer().sendMessage(message); // Works as well!
+
+              return Command.SINGLE_SUCCESS;
+            })));
+
+    /*
     ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) -> {
       dispatcher.register(LiteralArgumentBuilder.<FabricClientCommandSource>literal("adventure_client")
         .then(LiteralArgumentBuilder.<FabricClientCommandSource>literal("open_file").executes(ctx -> {
@@ -277,6 +414,7 @@ public class AdventureTester implements ModInitializer {
           return Command.SINGLE_SUCCESS;
         })));
     });
+     */
   }
 
   private static final Component COLON = text(":", NamedTextColor.GRAY);
@@ -309,7 +447,7 @@ public class AdventureTester implements ModInitializer {
           b.append(newline());
         }
         first = false;
-        player.get(Identity.DISPLAY_NAME).ifPresent(b::append);
+        ((Pointered)player).get(Identity.DISPLAY_NAME).ifPresent(b::append);
       }
     }));
     return text().content(players.size() + " players")
