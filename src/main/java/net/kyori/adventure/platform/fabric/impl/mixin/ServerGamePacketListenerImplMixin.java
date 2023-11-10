@@ -31,7 +31,6 @@ import net.minecraft.network.Connection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -41,7 +40,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ServerGamePacketListenerImplMixin {
 
   // Initialize attribute tracking the player for component rendering
-  @Inject(method = "<init>", at = @At(value = "FIELD", target = "Lnet/minecraft/server/level/ServerPlayer;connection:Lnet/minecraft/server/network/ServerGamePacketListenerImpl;", opcode = Opcodes.PUTFIELD))
+  @Inject(method = "<init>", at = @At(value = "RETURN", target = "Lnet/minecraft/server/level/ServerPlayer;connection:Lnet/minecraft/server/network/ServerGamePacketListenerImpl;"))
   private void adventure$initTracking(final MinecraftServer server, final Connection conn, final ServerPlayer player, final CallbackInfo ci) {
     final Channel chan = ((ConnectionAccess) conn).getChannel();
     if (chan != null) {
