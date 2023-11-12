@@ -256,37 +256,47 @@ dependencies {
     modImplementation(libs.fabric.loader)
      */
 
-    minecraftLibrary fg.deobf("net.kyori:adventure-key:4.14.0"){
+    /*
+    adventure = "4.12.0"
+    adventurePlatform = "4.1.2"
+    autoService = "1.0.1"
+    checkstyle = "10.4"
+    examination = "1.3.0"
+     */
+
+    minecraftLibrary fg.deobf("net.kyori:adventure-key:4.12.0"){
         exclude module: 'org.slf4j'
         exclude module: 'slf4j-api'
     }
-    minecraftLibrary fg.deobf("net.kyori:adventure-api:4.14.0"){
+    minecraftLibrary fg.deobf("net.kyori:adventure-api:4.12.0"){
         exclude module: 'org.slf4j'
         exclude module: 'slf4j-api'
     }
-    minecraftLibrary fg.deobf("net.kyori:adventure-text-logger-slf4j:4.14.0"){
+    minecraftLibrary fg.deobf("net.kyori:adventure-text-logger-slf4j:4.12.0"){
         exclude module: 'org.slf4j'
         exclude module: 'slf4j-api'
     }
-    minecraftLibrary fg.deobf("net.kyori:adventure-text-minimessage:4.14.0"){
+    minecraftLibrary fg.deobf("net.kyori:adventure-text-minimessage:4.12.0"){
         exclude module: 'org.slf4j'
         exclude module: 'slf4j-api'
     }
-    minecraftLibrary fg.deobf("net.kyori:adventure-text-serializer-plain:4.14.0"){
+    minecraftLibrary fg.deobf("net.kyori:adventure-text-serializer-plain:4.12.0"){
         exclude module: 'org.slf4j'
         exclude module: 'slf4j-api'
     }
 
-    minecraftLibrary fg.deobf("net.kyori:adventure-platform-api:4.3.0"){
+    minecraftLibrary fg.deobf("net.kyori:adventure-platform-api:4.1.2"){
         exclude module: "com.google.code.gson"
     }
-    minecraftLibrary fg.deobf("net.kyori:adventure-text-serializer-gson:4.14.0"){
+    minecraftLibrary fg.deobf("net.kyori:adventure-text-serializer-gson:4.12.0"){
         exclude module: "com.google.code.gson"
     }
     // needed as dependency for gson dependency
-    minecraftLibrary fg.deobf("net.kyori:adventure-text-serializer-json:4.14.0"){
+    /*
+    minecraftLibrary fg.deobf("net.kyori:adventure-text-serializer-json:4.12.0"){
         exclude module: "com.google.code.gson"
     }
+     */
 
     minecraftLibrary fg.deobf("net.kyori:examination-api:1.3.0")
     minecraftLibrary fg.deobf("net.kyori:examination-string:1.3.0")

@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 public class AdventurePlatformForge {
     public static final String MODID = "adventure_platform_forge";
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static final boolean TEST = false; // for development use only
     private final AdventureCommon adventureCommon;
     private final AdventureClient adventureClient;
     private final AdventureTester adventureTester;
@@ -32,7 +33,7 @@ public class AdventurePlatformForge {
     private void onCommonSetup(FMLCommonSetupEvent event){
         event.enqueueWork(() -> {
                 this.adventureCommon.onInitialize();
-                this.adventureTester.onInitialize();
+                if(TEST) this.adventureTester.onInitialize();
                 AdventureNetwork.init();
         });
     }

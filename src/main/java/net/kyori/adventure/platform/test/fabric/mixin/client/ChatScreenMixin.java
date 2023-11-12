@@ -23,6 +23,7 @@
  */
 package net.kyori.adventure.platform.test.fabric.mixin.client;
 
+import me.Thelnfamous1.adventure_platform_forge.AdventurePlatformForge;
 import net.kyori.adventure.platform.test.fabric.widget.AdventureTestButtons;
 import net.kyori.adventure.platform.test.fabric.widget.Widgets;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -48,25 +49,27 @@ public abstract class ChatScreenMixin extends Screen {
 
   @Inject(method = "init()V", at = @At("TAIL"))
   private void testmod$addCustomWidgets(final CallbackInfo ci) {
-    // Instantiate and add all children
-    int x = Widgets.BETWEEN_GROUP_SPACING; // padding used for chat screen edit box
-    final int y = this.height - ( // starting from bottom of the screen
-      this.minecraft.gui.getChat().getHeight() // height of the chat box
-        + this.input.getHeight() // height of the edit bar
-        + (int) Math.floor(24 * this.minecraft.gui.getChat().getScale())
-        + Widgets.BETWEEN_GROUP_SPACING * 2); // paddings
+    if(AdventurePlatformForge.TEST){
+      // Instantiate and add all children
+      int x = Widgets.BETWEEN_GROUP_SPACING; // padding used for chat screen edit box
+      final int y = this.height - ( // starting from bottom of the screen
+              this.minecraft.gui.getChat().getHeight() // height of the chat box
+                      + this.input.getHeight() // height of the edit bar
+                      + (int) Math.floor(24 * this.minecraft.gui.getChat().getScale())
+                      + Widgets.BETWEEN_GROUP_SPACING * 2); // paddings
 
-    for (final AbstractWidget widget : AdventureTestButtons.testItems()) {
-      widget.x = x;
-      widget.y = y - widget.getHeight(); // the y above takes us to the bottom of a widget, since we want to align those
+      for (final AbstractWidget widget : AdventureTestButtons.testItems()) {
+        widget.x = x;
+        widget.y = y - widget.getHeight(); // the y above takes us to the bottom of a widget, since we want to align those
 
-      if (widget.getHeight() > Widgets.BUTTON_SIZE) {
-        widget.y -= widget.getHeight() - Widgets.BUTTON_SIZE;
+        if (widget.getHeight() > Widgets.BUTTON_SIZE) {
+          widget.y -= widget.getHeight() - Widgets.BUTTON_SIZE;
+        }
+
+        x += widget.getWidth() + Widgets.IN_GROUP_SPACING;
+
+        this.addRenderableWidget(widget);
       }
-
-      x += widget.getWidth() + Widgets.IN_GROUP_SPACING;
-
-      this.addRenderableWidget(widget);
     }
   }
 }

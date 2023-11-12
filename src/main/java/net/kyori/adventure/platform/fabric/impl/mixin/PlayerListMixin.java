@@ -33,10 +33,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.level.storage.PlayerDataStorage;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -51,11 +48,15 @@ public class PlayerListMixin {
   @Shadow @Final @Mutable private Map<UUID, ServerPlayer> playersByUUID;
   // @formatter:on
 
+  @Mutable
+  @Shadow(remap = false) @Final private List<ServerPlayer> playersView;
+
   @Inject(method = "<init>", at = @At("RETURN"), require = 0)
   private void adventure$replacePlayerLists(final MinecraftServer server, final RegistryAccess.Frozen tracker, final PlayerDataStorage handler, final int i,
                                             final CallbackInfo ci) {
     this.players = new CopyOnWriteArrayList<>();
     this.playersByUUID = new ConcurrentHashMap<>();
+    this.playersView = java.util.Collections.unmodifiableList(this.players); // This list will be empty otherwise as it refers to the original players list
   }
 
 }
