@@ -2,7 +2,7 @@
   "required": true,
   "package": "net.kyori.adventure.platform.test.fabric.mixin",
   "compatibilityLevel": "JAVA_8",
-  "refmap": "${mod_id}.refmap.json",
+  "refmap": "adventure_platform_forge.refmap.json",
   "client": [
     "client.ChatScreenMixin"
   ],
