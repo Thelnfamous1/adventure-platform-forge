@@ -346,6 +346,9 @@ tasks.configureEach {
     if (name == "reobfJar") {
         mustRunAfter(tasks.shadowJar)
     }
+    if (name == "publishMavenJavaPublicationToMavenLocal") {
+        mustRunAfter(tasks.shadowJar)
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
