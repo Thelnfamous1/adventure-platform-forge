@@ -16,9 +16,10 @@ public class AdventureNetwork {
     private static final ResourceLocation CHANNEL_NAME = new ResourceLocation(AdventurePlatformForge.MODID, "network");
     private static final String PROTOCOL_VERSION = "1.0";
     public static final SimpleChannel SYNC_CHANNEL = NetworkRegistry.newSimpleChannel(
-            CHANNEL_NAME, () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
+            CHANNEL_NAME,
+            () -> PROTOCOL_VERSION,
+            clientVersion -> PROTOCOL_VERSION.equals(clientVersion) || NetworkRegistry.ABSENT.equals(clientVersion),
+            serverVersion -> PROTOCOL_VERSION.equals(serverVersion) || NetworkRegistry.ABSENT.equals(serverVersion)
     );
 
     public static void init() {
